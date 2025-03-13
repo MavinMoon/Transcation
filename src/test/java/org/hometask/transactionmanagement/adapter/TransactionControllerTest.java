@@ -4,11 +4,13 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import jakarta.servlet.ServletException;
 import org.hometask.transactionmanagement.application.command.TransactionCommandService;
 import org.hometask.transactionmanagement.application.dto.TransactionCreateDTO;
 import org.hometask.transactionmanagement.application.dto.TransactionUpdateDTO;
 import org.hometask.transactionmanagement.application.query.TransactionQueryService;
 import org.hometask.transactionmanagement.application.vo.TransactionVO;
+import org.hometask.transactionmanagement.utility.exception.UtilException;
 import org.hometask.transactionmanagement.utility.model.R;
 import org.junit.Before;
 import org.junit.Test;
@@ -90,7 +92,8 @@ public class TransactionControllerTest {
                 .andExpect(status().isOk())
                 .andReturn();
         String responseContent = result.getResponse().getContentAsString();
-        R<TransactionVO> response = objectMapper.readValue(responseContent, new TypeReference<>() {});
+        R<TransactionVO> response = objectMapper.readValue(responseContent, new TypeReference<>() {
+        });
         TransactionVO responseTransaction = response.getData();
 
         // then
@@ -105,7 +108,33 @@ public class TransactionControllerTest {
         commandService.removeTransaction(responseTransaction.getId());
     }
 
-    // 测试删除交易
+    // 测试创建重复异常
+    @Test
+    public void should_returnDuplicateException_when_createTransaction_given_duplicateTransactionCode() throws Exception {
+        // given
+
+        // when
+        mockMvc.perform(post("/api/v1/transaction")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(mockCreateDTO)))
+                .andExpect(status().isOk())
+                .andReturn();
+        Exception exception = assertThrows(ServletException.class,
+                () -> mockMvc.perform(post("/api/v1/transaction")
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content(objectMapper.writeValueAsString(mockCreateDTO)))
+                        .andExpect(status().isConflict())
+                        .andReturn()
+        );
+
+        // then
+        // 验证异常类型
+        assertTrue(exception.getCause() instanceof UtilException);
+        UtilException utilException = (UtilException) exception.getCause();
+        assertEquals("999997", utilException.getExceptionCode().getCode());
+    }
+
+    // 测试删除交易成功
     @Test
     public void should_returnSuccess_when_removeTransaction_given_validId() throws Exception {
         // given
@@ -136,7 +165,8 @@ public class TransactionControllerTest {
                 .andReturn();
 
         String responseContent = result.getResponse().getContentAsString();
-        R<TransactionVO> response = objectMapper.readValue(responseContent, new TypeReference<>() {});
+        R<TransactionVO> response = objectMapper.readValue(responseContent, new TypeReference<>() {
+        });
         TransactionVO updated = response.getData();
 
         // then
@@ -158,7 +188,8 @@ public class TransactionControllerTest {
                 .andReturn();
 
         String responseContent = result.getResponse().getContentAsString();
-        R<List<TransactionVO>> response = objectMapper.readValue(responseContent, new TypeReference<>() {});
+        R<List<TransactionVO>> response = objectMapper.readValue(responseContent, new TypeReference<>() {
+        });
         List<TransactionVO> transactions = response.getData();
 
         // then
@@ -168,7 +199,6 @@ public class TransactionControllerTest {
         // 清理
         commandService.removeTransaction(transactions.get(0).getId());
     }
-
 
 
 }

@@ -54,7 +54,7 @@ public class GlobalExceptionConfiguration {
 
         R<String> result = R.fail(TransactionManagerResponseCode.INVALID_PARAM.getCode(), message.toString());
 
-        log.info("------BindException------");
+        log.error("------BindException------");
         log.error(ExceptionUtils.getRootCauseMessage(exception), exception);
 
         return result;
@@ -68,7 +68,7 @@ public class GlobalExceptionConfiguration {
         response.setStatus(responseCode.getHttpStatus());
         R<String> result = R.fail(responseCode.getCode(), exception.getMessage());
 
-        log.info("------" + exception.getClass().getName() + "------");
+        log.error("------" + exception.getClass().getName() + "------");
         log.error(ExceptionUtils.getRootCauseMessage(exception), exception);
 
         return result;
